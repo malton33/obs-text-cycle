@@ -35,6 +35,12 @@ function script_tick(seconds)
   end
 end
 
+-- Button callback to force the text to cycle immediately
+function force_cycle_text(props, prop)
+  update_text()
+  return true
+end
+
 -- This function updates the text source with the next string in the list
 function update_text()
   -- Get the source by its name
@@ -118,6 +124,9 @@ function script_properties()
   obs.obs_properties_add_text(props, "text_list", "Text List (one per line)", obs.OBS_TEXT_MULTILINE)
   obs.obs_properties_add_int(props, "interval", "Interval (seconds)", 5, 3600, 1)
 
+  -- Button to immediately cycle the text
+  obs.obs_properties_add_button(props, "force_cycle_btn", "Cycle Text Now", force_cycle_text)
+
   return props
 end
 
@@ -171,4 +180,33 @@ Provides a description of the script.
 --]]
 function script_description()
   return "Cycles through a list of text strings for a specified text source at a set interval."
+end
+
+--[[
+=================================================================================
+SCRIPT HOTKEYS
+=================================================================================
+--]]
+local hotkey_id = obs.OBS_INVALID_HOTKEY_ID
+
+-- Hotkey callback to cycle the text now
+function on_cycle_hotkey(pressed)
+  if pressed then
+    update_text()
+  end
+end
+
+function script_load(settings)
+  -- Register a frontend hotkey and load saved binding
+  hotkey_id = obs.obs_hotkey_register_frontend("force_cycle_text.hotkey", "(Text Cycle) Cycle Text Now", on_cycle_hotkey)
+  local a = obs.obs_data_get_array(settings, "force_cycle_text.hotkey")
+  obs.obs_hotkey_load(hotkey_id, a)
+  obs.obs_data_array_release(a)
+end
+
+function script_save(settings)
+  -- Persist the hotkey binding
+  local a = obs.obs_hotkey_save(hotkey_id)
+  obs.obs_data_set_array(settings, "force_cycle_text.hotkey", a)
+  obs.obs_data_array_release(a)
 end
